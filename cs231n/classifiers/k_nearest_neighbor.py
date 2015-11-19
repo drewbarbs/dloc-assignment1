@@ -61,15 +61,7 @@ class KNearestNeighbor:
     dists = np.zeros((num_test, num_train))
     for i in xrange(num_test):
       for j in xrange(num_train):
-        #####################################################################
-        # TODO:                                                             #
-        # Compute the l2 distance between the ith test point and the jth    #
-        # training point, and store the result in dists[i, j]               #
-        #####################################################################
-        pass
-        #####################################################################
-        #                       END OF YOUR CODE                            #
-        #####################################################################
+        dists[i, j] = np.linalg.norm(X[i] - self.X_train[j])
     return dists
 
   def compute_distances_one_loop(self, X):
@@ -136,26 +128,10 @@ class KNearestNeighbor:
     for i in xrange(num_test):
       # A list of length k storing the labels of the k nearest neighbors to
       # the ith test point.
-      closest_y = []
-      #########################################################################
-      # TODO:                                                                 #
-      # Use the distance matrix to find the k nearest neighbors of the ith    #
-      # training point, and use self.y_train to find the labels of these      #
-      # neighbors. Store these labels in closest_y.                           #
-      # Hint: Look up the function numpy.argsort.                             #
-      #########################################################################
-      pass
-      #########################################################################
-      # TODO:                                                                 #
-      # Now that you have found the labels of the k nearest neighbors, you    #
-      # need to find the most common label in the list closest_y of labels.   #
-      # Store this label in y_pred[i]. Break ties by choosing the smaller     #
-      # label.                                                                #
-      #########################################################################
-      pass
-      #########################################################################
-      #                           END OF YOUR CODE                            # 
-      #########################################################################
+      closest_y = self.y_train[np.argsort(dists[i])[:k]]
+      # find the most common label in the list
+      # break ties by choosing the smaller label
+      y_pred[i] = np.argmax(np.bincount(closest_y))
 
     return y_pred
 
