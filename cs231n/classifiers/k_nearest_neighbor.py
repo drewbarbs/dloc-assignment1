@@ -75,15 +75,7 @@ class KNearestNeighbor:
     num_train = self.X_train.shape[0]
     dists = np.zeros((num_test, num_train))
     for i in xrange(num_test):
-      #######################################################################
-      # TODO:                                                               #
-      # Compute the l2 distance between the ith test point and all training #
-      # points, and store the result in dists[i, :].                        #
-      #######################################################################
-      pass
-      #######################################################################
-      #                         END OF YOUR CODE                            #
-      #######################################################################
+      dists[i] = np.linalg.norm(self.X_train - X[i], axis=1)
     return dists
 
   def compute_distances_no_loops(self, X):
@@ -95,19 +87,23 @@ class KNearestNeighbor:
     """
     num_test = X.shape[0]
     num_train = self.X_train.shape[0]
-    dists = np.zeros((num_test, num_train)) 
-    #########################################################################
-    # TODO:                                                                 #
-    # Compute the l2 distance between all test points and all training      #
-    # points without using any explicit loops, and store the result in      #
-    # dists.                                                                #
-    # HINT: Try to formulate the l2 distance using matrix multiplication    #
-    #       and two broadcast sums.                                         #
-    #########################################################################
-    pass
-    #########################################################################
-    #                         END OF YOUR CODE                              #
-    #########################################################################
+    # Note that l2 distance between X_test[i] and X_train[j] is
+    # sqrt(X_test[i].dot(X_test[i]) - 2*X_test[i]*X_train[j] + X_train[j].dot(X_train[j]))
+    # so we compute
+    xtrn_2 = np.sum(self.X_train**2, axis=1)
+    # (so xtrn_2[j] = X_train[j].dot(X_train[j])
+    xtst_2 = np.sum(X**2, axis=1)
+    # (so xtst_2[i] = X_test[i].dot(X_test[i]))
+    XteXtr = (self.X_train.dot(X.T)).T
+    # (so XteXtr[i, j] = X_test[i].dot(X_train[j]))
+    dists_2 = -2*XteXtr + xtrn_2 + xtst_2.reshape((-1, 1))
+    dists = np.sqrt(dists_2)
+
+    # If we had all the memory in the world, we could broadcast out a matrix M of dimension
+    # (num_test, num_train, img_dimensionality), where
+    # M[i, j, :] == X_test[i, :] - X_train[j, :]
+    # then take the norm along the last dimension
+    #dists = np.linalg.norm(self.X_train.reshape((1, num_train, -1)) - X.reshape((num_test, 1, -1)), axis=2)
     return dists
 
   def predict_labels(self, dists, k=1):
