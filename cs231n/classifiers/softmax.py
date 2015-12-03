@@ -22,17 +22,21 @@ def softmax_loss_naive(W, X, y, reg):
   num_classes = W.shape[0]
   for i in range(num_samples):
     scores = W.dot(X[:, i])
-    probs = np.exp(scores)
-    prob_sum = probs.sum()
-    nprob_correct = probs[y[i]]/prob_sum
+    # numerical stability: subtracting same value from all scores
+    # prior to exponentiating is equiv to multiplying top/bottom of softmax expression
+    # by a constant
+    scores -= np.max(scores)
+    exp_scores = np.exp(scores)
+    escore_sum = exp_scores.sum()
+    nprob_correct = exp_scores[y[i]]/escore_sum
     loss += -np.log(nprob_correct)
     d_nprob_correct = -1./nprob_correct
     for cls in range(num_classes):
       if cls == y[i]:
-        dprobs_cls = d_nprob_correct * (prob_sum - probs[y[i]])/prob_sum**2
+        dexp_scores_cls = d_nprob_correct * (escore_sum - exp_scores[y[i]])/escore_sum**2
       else:
-        dprobs_cls = d_nprob_correct * -probs[y[i]]/prob_sum**2 
-      dscores_cls = dprobs_cls * np.exp(scores[cls])
+        dexp_scores_cls = d_nprob_correct * -exp_scores[y[i]]/escore_sum**2 
+      dscores_cls = dexp_scores_cls * np.exp(scores[cls])
       dW[cls, :] += dscores_cls * X[:, i]
   loss /= num_samples
   loss += 0.5 * reg * np.sum(W*W)
@@ -52,16 +56,17 @@ def softmax_loss_vectorized(W, X, y, reg):
   num_classes, num_samples = W.shape[0], X.shape[1]
   col_range = np.arange(num_samples)
   scores = W.dot(X)
-  probs = np.exp(scores)
-  prob_sum = probs.sum(axis=0)
-  nprob_correct = probs[y, col_range]/prob_sum
+  scores -= np.max(scores, axis=0)
+  exp_scores = np.exp(scores)
+  escore_sum = exp_scores.sum(axis=0)
+  nprob_correct = exp_scores[y, col_range]/escore_sum
   loss = np.mean(-np.log(nprob_correct))
   loss += 0.5 * reg * np.sum(W*W)
   d_nprob_correct = -1./nprob_correct
-  dprobs = np.tile(-probs[y, col_range], (num_classes, 1))
-  dprobs[y, col_range] += prob_sum
-  dprobs *= d_nprob_correct/prob_sum**2
-  dscores = dprobs * probs
+  dexp_scores = np.tile(-exp_scores[y, col_range], (num_classes, 1))
+  dexp_scores[y, col_range] += escore_sum
+  dexp_scores *= d_nprob_correct/escore_sum**2
+  dscores = dexp_scores * exp_scores
   dW = dscores.dot(X.T) 
   dW /= num_samples
   dW += reg * W
