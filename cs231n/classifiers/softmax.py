@@ -59,14 +59,10 @@ def softmax_loss_vectorized(W, X, y, reg):
   scores -= np.max(scores, axis=0)
   exp_scores = np.exp(scores)
   escore_sum = exp_scores.sum(axis=0)
-  nprob_correct = exp_scores[y, col_range]/escore_sum
-  loss = np.mean(-np.log(nprob_correct))
+  loss = np.mean(-scores[y, col_range] + np.log(escore_sum))
   loss += 0.5 * reg * np.sum(W*W)
-  d_nprob_correct = -1./nprob_correct
-  dexp_scores = np.tile(-exp_scores[y, col_range], (num_classes, 1))
-  dexp_scores[y, col_range] += escore_sum
-  dexp_scores *= d_nprob_correct/escore_sum**2
-  dscores = dexp_scores * exp_scores
+  dscores = exp_scores/escore_sum
+  dscores[y, col_range] -= 1
   dW = dscores.dot(X.T) 
   dW /= num_samples
   dW += reg * W
